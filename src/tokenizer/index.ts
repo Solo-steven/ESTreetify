@@ -23,6 +23,9 @@ export function forkContext(target: Context): Context {
 /** Tokenizer for push token to parser
  * 
  */
+// TODO: multi line comment.
+// TODO: template string.
+// TODO: string with '/' could change line, regex support.
 export class Tokenizer {
     private code: string;
     private context: Context;
@@ -282,10 +285,17 @@ export class Tokenizer {
         return this.finishToken(tt.divide.create, "/");
     }
     readComment() {
-
+        if(!this.is("/")) {
+            throw this.behaviorError("readComment", "//");
+        }
+        let comment = "";
+        while(!this.is("\n")) {
+            comment += this.eat();
+        }
+        return this.finishToken(tt.singleLineComment.create, comment);
     }
     readCommentBlock() {
-
+        // TODO
     }
     readModStart() {
         if(this.is("*")) {

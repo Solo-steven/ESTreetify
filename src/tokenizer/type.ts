@@ -187,7 +187,7 @@ export const ReservedWords = {
         // Relation operators
         "in", "instanceof",
     ],
+    // TODO: more generice defined for utf-8 support
     whiteSpaceChars: [" ", "\t"],
     newLineChars: ["\n"],
-
 };
