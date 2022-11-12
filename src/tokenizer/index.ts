@@ -1,125 +1,153 @@
-import type {SourceLocation, Position} from "@/src/utils/location";
+import type {Position} from "@/src/utils/location";
 import {forkPosition, createPosition} from "@/src/utils/location";
 import {createLocation} from "@/src/utils/location";
-import type {Token} from "@/src/tokenizer/type";
+import type {Token, TokenFactory} from "@/src/tokenizer/type";
 import {ReservedWords, UTF8Def, TokenFactories} from "./type";
 import {composeCharsArray} from "./type";
-
-/** Context for reading Code String
- *  - position: current pointer to code string.
- *  - location: location info, row and col.
+/** 
+ *  Context Interface is used for reading Code String
+ *  @property {number} pointer: current pointer to code string.
+ *  @property {number} position: current position that current pointer is in source file.
  */
 export interface Context {
-    currentPosition: Position;
-    currentPointer: number;
+    position: Position;
+    pointer: number;
 }
-export function createContext (): Context {
-    return {
-        currentPointer: 0,
-        currentPosition: createPosition()
-    };
-}
-export function forkContext(target: Context): Context {
-    return { ...target, currentPosition: forkPosition(target.currentPosition) };
-}
-/** Tokenizer for push token to parser
- * 
+/**
+ * this function is utils function that init a Context type Object.
+ * @returns {Context} - new context start from 0, current point and position is 0.
  */
-// TODO: template string.
-// TODO: string with '/' could change line, regex support.
+export function createContext (): Context {
+    return { pointer: 0, position: createPosition()};
+}
+/**
+ * forkContext function is used for forking a exsied context, majorly used 
+ * when you need to remainder start context of token.
+ * @param {Context} target - target context that you want to fork
+ * @returns {Context} - new context in different memory position
+ */
+export function forkContext(target: Context): Context {
+    return { ...target, position: forkPosition(target.position) };
+}
+/**
+ * Tokenizer Class is used for tokenize code string intpo tokens
+ * @property {string} code - code string
+ * @property {Context} context - current point and current position
+ */
 export class Tokenizer {
     private code: string;
     private context: Context;
-    private tempTokenStartPointer: number;
-    private tempTokenStartPosition: Position | null;
+    private startTokenContext: Context | null;
     constructor(code: string) {
         this.code = code;
         this.context = createContext();
-        this.tempTokenStartPosition = null;
-        this.tempTokenStartPointer = 0;
+        this.startTokenContext  = null;
     }
     /**
-     * Peek is a util function peek n char from current point position,
-     * if meet eof, it would return empty string.
-     * @param {number} n number of char need to peek, default is 0
-     * @returns {string} peek string, if meet eof, it would return empty string.
+     * peek function is used for peek string start at current pointer.
+     * Just like code.slice(currentPoint, currentPoint + n).
+     *  1. min value of n is 1, when n is 1, peek function would return current char (code[currentPoint]).
+     *  2. when current pointer reach eof, it would return empty string.
+     *  3. when current point + n exccess length of code. it would return code.slice(currentPoint);
+     * @param {number} n - number of char start from current point. min of n is 1. 
+     * @returns {string} - the string that you want to peek.
      */
-    private peek(n: number = 0): string {
-        if(n < 0) {
-            throw new Error(``);
+    private peek(n: number = 1): string {
+        if(n < 1) {
+            throw new Error(`[Error]: param 'n' at peek function need to >= 1. but now get ${n}.`)
         }
-        if(this.code.length <= this.context.currentPointer) {
-            return "";
-        }
-        if(this.context.currentPointer + n + 1< this.code.length) {
-            return this.code.slice(this.context.currentPointer, this.context.currentPointer + n + 1);
-        }
-        return this.code.slice(this.context.currentPointer);
+        return this.code.slice(this.context.pointer, this.context.pointer + n);
     }
     /**
-     * Eat is a util function that 
-     * last position to current position
+     * eat function is used to move current point forward n char and return the string.
+     * Just like return peek(n), then current point = current point + n; so default is 0.
      * @param {number} n 
-     * @returns {string}
+     * @returns 
      */
-    private eat(n: number = 0): string {
-        const char = this.peek(n);
-        if(char === "") {
-            return "";
+    private eat(n: number = 1): string {
+        if(n < 1) {
+            throw new Error(`[Error]: param 'n' at eat function need to >= 1. but now get ${n}.`)
         }
+        const char = this.peek(n);
         for(const ch of char) {
             if(ch === UTF8Def.newLineChars[0]) {
-                this.context.currentPosition.row ++;
-                this.context.currentPosition.col = 0;
+                this.context.position.row ++;
+                this.context.position.col = 0;
             } else {
-                this.context.currentPosition.col ++;
+                this.context.position.col ++;
             }
-            this.context.currentPointer ++;
+            this.context.pointer ++;
         }
         return char;
     }
-    private is(char: string | Array<string> |Set<string>= "") {
-        if(char === "") {
-            return this.peek() === "";
-        }
-        if(typeof(char) == "string") {
+    /**
+     * eof function is used to show is current point is reach EOF
+     * @returns {boolean} - is meet EOF
+     */
+    private eof(): boolean {
+        return this.peek() === "";
+    }
+    /**
+     * is function is used to show is next code string is match to string that 
+     * pass by param. is function just a directive function of 'peek() === value'
+     * @param {string | Array<string>} char - string values thay we want to match.
+     * @returns {boolean} - is match one of given value.
+     */
+    private is(char: string | Array<string>): boolean {
+        if(typeof(char) === "string") {
             char = [char];
         }
-        if(!(char instanceof Set)) {
-            char = new Set(char);
-        }
         for(const value of char) {
-            if(value === this.peek(value.length - 1)) {
+            if(value.length === 0) {
+                throw new Error(`[Error]: is function can't access empty string.`);
+            }
+            if(value === this.peek(value.length)) {
                 return true;
             }
         }
         return false;
     }
-    protected startToken() {
-        this.tempTokenStartPointer = this.context.currentPointer;
-        this.tempTokenStartPosition = forkPosition(this.context.currentPosition)
+    /**
+     *  startToken function call when start read a token, it would 
+     *  fork current context to startTokenContext Property.
+     * @return {void} - no return value
+     */
+    protected startToken(): void {
+        this.startTokenContext = forkContext(this.context);
     }
+    /**
+     * finishToken function is a HOF what create a token by passing a TokenFactory function
+     * it would pass the context that store at 'startTokenContext' and current Context to 
+     * TokenFactoty function.
+     * @param {TokenFactory} callback - function of TokenFactory
+     * @param {T} value - type of value that pass to TokenFactory
+     * @returns {Token<T>} - token created by TokenFactory
+     */
     protected finishToken<T>(
-        callback: (value: T, start: number, end: number,location: SourceLocation) => Token, 
+        callback: TokenFactory,
         value: T
-    ) {
+    ): Token<T> {
         const location = createLocation();
-        location.start = forkPosition(this.tempTokenStartPosition);
-        location.end = forkPosition(this.context.currentPosition);
-        return callback(value, this.tempTokenStartPointer, this.context.currentPointer, location);
+        location.start = forkPosition(this.startTokenContext.position);
+        location.end = forkPosition(this.context.position);
+        return callback(value, this.startTokenContext.pointer, this.context.pointer, location);
     }
-    protected behaviorError(name: string, char: string) {
+    /**
+     * sunStateMachineError is used for return a format error to developer that Sub State Machine
+     * expect start chars that is not show in current code string.
+     * @param {string} name - name of sub state machine
+     * @param {string} char - chars that sub state machine is expected
+     * @returns {Error} - a error object
+     */
+    subStateMachineError(name: string, char: string): Error {
         return new Error(`[Error]: ${name} state machine should only be called when currnet position is ${char}. `);
-    }
-    protected lexicalError() {
-        // TODO
     }
     getToken() {
         this.skipSpace();
-        const char = this.peek();
-        if(char === "") {
+        if(this.eof()) {
             return this.finishToken(TokenFactories.eof, "eof");
         }
+        const char = this.peek();
         this.startToken();
         switch(char) {
             /** ==========================================
@@ -244,7 +272,7 @@ export class Tokenizer {
         }
     }
     skipSpace() {
-        while(!this.is()) {
+        while(!this.eof()) {
             if(!this.is(
                 composeCharsArray(UTF8Def.newLineChars, UTF8Def.whiteSpaceChars)
             )) {
@@ -258,18 +286,18 @@ export class Tokenizer {
      *      Operators State Machine
      *  ======================================
      */
-    readPlusStart(): Token {
+    readPlusStart() {
         // read any token start with '+', '+=', '++'
         // MUST call when current char is '+'
         if(!this.is("+")) {
-            throw this.behaviorError("readPlusStart", "+")
+            throw this.subStateMachineError("readPlusStart", "+")
         }
         if(this.is("+=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.plusAssign, "+=");
         }
         if(this.is("++")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.incre, "++");
         }
         this.eat();
@@ -279,14 +307,14 @@ export class Tokenizer {
         // read any token start with '-', '-=', '--'
         // MUST call when current char is '-'
         if(!this.is("-")) {
-            throw this.behaviorError("readMinusStart", "-");
+            throw this.subStateMachineError("readMinusStart", "-");
         }
         if(this.is("-=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.multiplyAssign, "-=");
         }
         if(this.is("--")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.decre, "--");
         }
         this.eat();
@@ -296,18 +324,18 @@ export class Tokenizer {
         // read any token start with '*', '*=', '**', '**='
         // MUST call when current char is '*'
         if(!this.is("*")) {
-            throw this.behaviorError("readMutiplyStart", "*");
+            throw this.subStateMachineError("readMutiplyStart", "*");
         }
         if(this.is("**=")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.exponAssign, "**=");
         }
         if(this.is("**")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.expon, "**");
         }
         if(this.is("*=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.multiplyAssign,"*=");
         }
         this.eat();
@@ -317,7 +345,7 @@ export class Tokenizer {
         // read any token start with '/', '/=', 'single-line-comment', 'block-comment'
         // MUST call when current char is '/'
         if(!this.is("/")) {
-            throw this.behaviorError("readSlashStart", "/");
+            throw this.subStateMachineError("readSlashStart", "/");
         }
         if(this.is("//")) {
             return this.readComment();
@@ -326,7 +354,7 @@ export class Tokenizer {
             return this.readCommentBlock();
         }
         if(this.is("/=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.divideAssign, "//");
         }
         this.eat();
@@ -334,11 +362,12 @@ export class Tokenizer {
     }
     readComment() {
         if(!this.is("//")) {
-            throw this.behaviorError("readComment", "//");
+            throw this.subStateMachineError("readComment", "//");
         }
-        this.eat(1);
+        // eat '//'
+        this.eat(2);
         let comment = "";
-        while(!this.is("\n")) {
+        while(!this.is("\n") && !this.eof()) {
             comment += this.eat();
         }
         return this.finishToken(TokenFactories.singleLineComment, comment);
@@ -347,26 +376,28 @@ export class Tokenizer {
         if(!this.is("/*")) {
             throw new Error(``);
         }
-        this.eat(1); // Eat '/*'
+        // Eat '/*'
+        this.eat(2);
         let comment = "";
-        while(!this.is("*/") && !this.is()) {
+        while(!this.is("*/") && !this.eof()) {
             comment += this.eat();
         }
-        if(this.is()) {
+        if(this.eof()) {
             // lexical error, no close */ to comment.
             throw new Error();
         }
-        this.eat(1); // eat '*/'
+        // eat '*/'
+        this.eat(2);
         return this.finishToken(TokenFactories.multiLineComment, comment);
     }
     readModStart() {
         // read any token start with '%', '%='
         // MUST call when current char is '%'
         if(!this.is("%")) {
-            throw this.behaviorError("readModStart", "%");
+            throw this.subStateMachineError("readModStart", "%");
         }
         if(this.is("%=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.modAssign,"%=");
         }
         this.eat();
@@ -376,26 +407,26 @@ export class Tokenizer {
         // read any token start with '>', '>=', '>>', '>>=', '>>>', '>>>='
         // MUST call when current char is '>'
         if(!this.is(">")) {
-            throw this.behaviorError("readGTStart", ">");
+            throw this.subStateMachineError("readGTStart", ">");
         }
         if(this.is(">>>=")) {
-            this.eat(3);
+            this.eat(4);
             this.finishToken(TokenFactories.bitwiseRightShiftFillAssgin, ">>>=");
         }
         if(this.is(">>>")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.bitwiseRightShiftFill, ">>>");
         }
         if(this.is(">>=")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.bitwiseRightShiftAssgin, ">>=");
         }
         if(this.is(">>")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.bitwiseRightShift, ">>")
         }
         if(this.is(">=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.geqt, ">=");
         }
         this.eat();
@@ -405,19 +436,19 @@ export class Tokenizer {
         // read any token start with '<', '<=', '<<', '<<='
         // MUST call when current char is '<'
         if(!this.is("<")) {
-            throw this.behaviorError("readLTStart", "<");
+            throw this.subStateMachineError("readLTStart", "<");
         }
         this.eat();
         if(this.is("<<=")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.bitwiseLeftShiftAssgin, "<<=");
         }
         if(this.is("<<")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.bitwiseLeftShift, "<<");
         }
         if(this.is("<=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.leqt, "<=");
         }
         this.eat();
@@ -427,14 +458,14 @@ export class Tokenizer {
         // [READ]: '=', '==', '==='
         // [MUST]: call when current char is '=' 
         if(!this.is("=")) {
-            throw this.behaviorError("readAssginStart", "=");
+            throw this.subStateMachineError("readAssginStart", "=");
         }
         if(this.is("===")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.strictEq, "===");
         }
         if(this.is("==")) {
-            this.eat(1);
+            this.eat(3);
             return this.finishToken(TokenFactories.eq, "==");
         }
         this.eat();
@@ -444,14 +475,14 @@ export class Tokenizer {
         // [READ]: '!', '!=', '!=='
         // [MUST]: call when current char is '!'
         if(!this.is("!")) {
-            throw this.behaviorError("readExclamationStart", "!");
+            throw this.subStateMachineError("readExclamationStart", "!");
         }
         if(this.is("!==")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.strictNotEq, "!==");
         }
         if(this.is("!=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.notEq, "!=");
         }
         this.eat();
@@ -461,18 +492,18 @@ export class Tokenizer {
         // [READ]: '&', '&&', '&=', '&&='
         // [MUST]: call when current char is '&' 
         if(!this.is("&")) {
-            throw this.behaviorError("readANDStart", "&");
+            throw this.subStateMachineError("readANDStart", "&");
         }
         if(this.is("&&=")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.logicalANDAssgin, "&&=");
         }
         if(this.is("&&")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.logicalAND, "&&");
         }
         if(this.is("&=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.bitwiseANDAssgin, "&=");
         }
         this.eat();
@@ -482,18 +513,18 @@ export class Tokenizer {
         // [READ]: '|', '||', '|=', '||='
         // [MUST]: call when current char is '|' 
         if(!this.is("|")) {
-            throw this.behaviorError("readORStart", "|");
+            throw this.subStateMachineError("readORStart", "|");
         }
         if(this.is("||=")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.logicalORAssign,"||=");
         }
         if(this.is("|=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.bitwiseORAssgin,"|=");
         }
         if(this.is("||")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.logicalOR,"||");
         }
         this.eat();
@@ -503,11 +534,11 @@ export class Tokenizer {
         // [READ]: '?', '?.' '??'
         // [MUST]: call when current char is '?'
         if(!this.is("?")) {
-            throw this.behaviorError("readQustionStart", "?");
+            throw this.subStateMachineError("readQustionStart", "?");
         } 
         this.eat();
         if(this.is("?.")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.qustionDot,"?.");
         }
         if(this.is("??")) {
@@ -520,10 +551,10 @@ export class Tokenizer {
         // [READ]: '.', '...'
         // [MUST]: call when current char is '.'
         if(!this.is(".")) {
-            throw this.behaviorError("readDotStart", ".");
+            throw this.subStateMachineError("readDotStart", ".");
         } 
         if(this.is("...")) {
-            this.eat(2);
+            this.eat(3);
             return this.finishToken(TokenFactories.spread, "...");
         }
         if(this.is(".")) {
@@ -537,10 +568,10 @@ export class Tokenizer {
         // [READ]: '~', '~='
         // [MUST]: call when current char is '~'
         if(!this.is("~")) {
-            throw this.behaviorError("readWaveStart", "~");
+            throw this.subStateMachineError("readWaveStart", "~");
         } 
         if(this.is("~=")) {
-            this.eat(1);
+            this.eat(2);
             return this.finishToken(TokenFactories.bitwiseXORAssgin, "~=");
         }
         this.eat();

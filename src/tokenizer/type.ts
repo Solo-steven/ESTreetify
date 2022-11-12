@@ -7,29 +7,29 @@ export interface TokenType {
     type: string;
     label: string;
 }
-export interface Token {
+export interface Token<T> {
     type: TokenType;
-    value: string;
+    value: T;
     start: number;
     end: number;
     location: SourceLocation;
 };
 export interface TokenFactory  {
-    (value: string, start: number, end: number, location: SourceLocation): Token;
-    is(token: Token): boolean;
+    <T>(value: T, start: number, end: number, location: SourceLocation): Token<T>;
+    is(token: Token<unknown>): boolean;
     type(): TokenType; // For Test Case
 }
 
-function createTokenFactory(type: string, label: string): TokenFactory {
+function createTokenFactory<V = string>(type: string, label: string): TokenFactory {
     const tokenType: TokenType = Object.freeze({ type, label });
-    const tokenFactory = (
-        value: string, start: number, end: number, 
+    const tokenFactory = <T = V>(
+        value: T, start: number, end: number, 
         location: SourceLocation
-    ): Token => ({
+    ): Token<T> => ({
             type: tokenType,
             value, start, end, location
     });
-    tokenFactory.is = (token: Token) => token.type === tokenType;
+    tokenFactory.is = (token: Token<unknown>) => token.type === tokenType;
     tokenFactory.type = () => tokenType;
     return tokenFactory;
 }
