@@ -1,0 +1,8 @@
+class Parser {
+    parse() {
+        
+    }
+    parseProgram() {
+
+    }
+}

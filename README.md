@@ -1,2 +1,2 @@
 # ESTreetify
-a toy that parse your javascript code string into ESTree AST.
+a toy that parse your javascript code into ESTree AST Objects.

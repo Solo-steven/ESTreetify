@@ -3,140 +3,148 @@ import { SourceLocation } from "@/src/utils/location";
  *          Token and ToknType Data Type
  * ========================================================
  */
+export interface TokenType {
+    type: string;
+    label: string;
+}
 export interface Token {
     type: TokenType;
     value: string;
-    startLoc: SourceLocation;
-    endLoc: SourceLocation;
+    start: number;
+    end: number;
+    location: SourceLocation;
 };
-class TokenType {
-    type: string;
-    label: string;
-    constructor(type: string, label: string) {
-        this.type = type;
-        this.label = label;
-        this.create = this.create.bind(this);
-        this.is = this.is.bind(this);
-    }
-    create(value: string, startLoc: SourceLocation, endLoc: SourceLocation | null = null): Token {
-        return {
-            type: this,
-            value,
-            startLoc,
-            endLoc: endLoc ? endLoc : startLoc
-        }
-    }
-    is(token: Token) {
-        return token.type === this;
-    }
+export interface TokenFactory  {
+    (value: string, start: number, end: number, location: SourceLocation): Token;
+    is(token: Token): boolean;
+    type(): TokenType; // For Test Case
 }
-export const Toknes  = {
+
+function createTokenFactory(type: string, label: string): TokenFactory {
+    const tokenType: TokenType = Object.freeze({ type, label });
+    const tokenFactory = (
+        value: string, start: number, end: number, 
+        location: SourceLocation
+    ): Token => ({
+            type: tokenType,
+            value, start, end, location
+    });
+    tokenFactory.is = (token: Token) => token.type === tokenType;
+    tokenFactory.type = () => tokenType;
+    return tokenFactory;
+}
+
+export const TokenFactories  = {
     // ========== Keyword ==========
-    await: new TokenType("keyword/await", "await"),
-    break: new TokenType("keyword/break", "break"),
-    case: new TokenType("keyword/case", "case"),
-    catch: new TokenType("keyword","catch"),
-    class: new TokenType("keyword/class", "class"),
-    const: new TokenType("keyword/const", "const"),
-    continue: new TokenType("keyword/continue", "continue"),
-    debugger: new TokenType("keyword/debugger", "debugger"),
-    default: new TokenType("keyword/default", "default"),
-    do: new TokenType("keyword/do", "do"),
-    else: new TokenType("keyword/else", "else"),
-    enum: new TokenType("keyword/enum", "enum"),
-    export: new TokenType("keyword/export", "export"),
-    extends: new TokenType("keyword/extends", "extends"),
-    finally: new TokenType("keyword/finally", "finally"),
-    for: new TokenType("keyword/for", "for"),
-    function: new TokenType("keyword/function", "function"),
-    if: new TokenType("keyword/if", "if"),
-    import: new TokenType("keyword/import", "import"),
-    new: new TokenType("keyword/new", "new"),
-    return: new TokenType("keyword/new", "new"),
-    super: new TokenType("keyword/super", "super"),
-    switch: new TokenType("keyword/switch", "switch"),
-    this: new TokenType("keyword/this", "this"),
-    throw: new TokenType("keyword/throw", "throw"),
-    try: new TokenType("keyword/try", "try"),
-    var: new TokenType("keyword/var", "var"),
-    with: new TokenType("keyword/with", "with"),
-    yield: new TokenType("keyword/yield", "yield"),
-    delete: new TokenType("keyword/delete", "delete"),
-    void: new TokenType("keyword/void", "void"),
-    typeof: new TokenType("keyword/typeof", "typeof"),
-    in: new TokenType("keyword/in", "in"),
-    instanceof: new TokenType("keyword/instanceof", "instanceof"),
+    await: createTokenFactory("keyword/await", "await"),
+    break: createTokenFactory("keyword/break", "break"),
+    case: createTokenFactory("keyword/case", "case"),
+    catch: createTokenFactory("keyword","catch"),
+    class: createTokenFactory("keyword/class", "class"),
+    const: createTokenFactory("keyword/const", "const"),
+    continue: createTokenFactory("keyword/continue", "continue"),
+    debugger: createTokenFactory("keyword/debugger", "debugger"),
+    default: createTokenFactory("keyword/default", "default"),
+    do: createTokenFactory("keyword/do", "do"),
+    else: createTokenFactory("keyword/else", "else"),
+    enum: createTokenFactory("keyword/enum", "enum"),
+    export: createTokenFactory("keyword/export", "export"),
+    extends: createTokenFactory("keyword/extends", "extends"),
+    finally: createTokenFactory("keyword/finally", "finally"),
+    for: createTokenFactory("keyword/for", "for"),
+    function: createTokenFactory("keyword/function", "function"),
+    if: createTokenFactory("keyword/if", "if"),
+    import: createTokenFactory("keyword/import", "import"),
+    new: createTokenFactory("keyword/new", "new"),
+    return: createTokenFactory("keyword/new", "new"),
+    super: createTokenFactory("keyword/super", "super"),
+    switch: createTokenFactory("keyword/switch", "switch"),
+    this: createTokenFactory("keyword/this", "this"),
+    throw: createTokenFactory("keyword/throw", "throw"),
+    try: createTokenFactory("keyword/try", "try"),
+    var: createTokenFactory("keyword/var", "var"),
+    with: createTokenFactory("keyword/with", "with"),
+    yield: createTokenFactory("keyword/yield", "yield"),
+    delete: createTokenFactory("keyword/delete", "delete"),
+    void: createTokenFactory("keyword/void", "void"),
+    typeof: createTokenFactory("keyword/typeof", "typeof"),
+    in: createTokenFactory("keyword/in", "in"),
+    instanceof: createTokenFactory("keyword/instanceof", "instanceof"),
+    let: createTokenFactory("keyword/let", "let"),
     // ========== Punctuators ==========
-    bracesLeft: new TokenType("punctuator/bracesLeft", "{"),
-    bracesRight: new TokenType("punctuator/bracesRight", "}"),
-    bracketLeft: new TokenType("punctuator/bracketLeft", "["),
-    bracketRight: new TokenType("punctuator/bracketRight", "]"),
-    parenthesesLeft: new TokenType("punctuator/parenthesesLeft", "("),
-    parenthesesRight: new TokenType("punctuator/parenthesesRight", ")"),
-    singleQuotation: new TokenType("punctuator/singleQuotation", "\'"),
-    doubleQuotation: new TokenType("punctuator/doubleQuotation", "\""),
-    semi: new TokenType("punctuator/Semi", ";"),
-    colon: new TokenType("punctuator/colon", ":"),
-    hashTag: new TokenType("punctuator/HashTag", "#"),
+    bracesLeft: createTokenFactory("punctuator/bracesLeft", "{"),
+    bracesRight: createTokenFactory("punctuator/bracesRight", "}"),
+    bracketLeft: createTokenFactory("punctuator/bracketLeft", "["),
+    bracketRight: createTokenFactory("punctuator/bracketRight", "]"),
+    parenthesesLeft: createTokenFactory("punctuator/parenthesesLeft", "("),
+    parenthesesRight: createTokenFactory("punctuator/parenthesesRight", ")"),
+    singleQuotation: createTokenFactory("punctuator/singleQuotation", "\'"),
+    doubleQuotation: createTokenFactory("punctuator/doubleQuotation", "\""),
+    semi: createTokenFactory("punctuator/Semi", ";"),
+    colon: createTokenFactory("punctuator/colon", ":"),
+    hashTag: createTokenFactory("punctuator/HashTag", "#"),
     // ========== Operators ==========
-    plus: new TokenType("operator/plus", "+"),
-    minus: new TokenType("operator/mius", "-"),
-    divide: new TokenType("operator/divide", "/"),
-    multiply: new TokenType("operator/multiply", "*"),
-    mod: new TokenType("operator/mod", "%"),
-    incre: new TokenType("operator/incre", "++"),
-    decre:new TokenType("operator/decre", "--"),
-    expon: new TokenType("operator/expon", "**"),
-    gt: new TokenType("operator/greaterThen", ">"),
-    lt: new TokenType("operator/lessThen", "<"),
-    eq: new TokenType("operator/equal", "=="),
-    notEq: new TokenType("operator/notEqual", "!="),
-    geqt: new TokenType("operator/greaterOrEqualThen", ">="),
-    leqt: new TokenType("operator/lessOrEqualThen", "<="),
-    strictEq: new TokenType("operator/strictEqual", "==="),
-    strictNotEq: new TokenType("operator/strictNotEqual", "!=="),
-    bitwiseOR: new TokenType("operator/bitwiseOR", "|"),
-    bitwiseAND: new TokenType("operator/bitwiseAND", "&"),
-    bitewiseNOT: new TokenType("operator/bitwiseNOT", "~"),
-    bitwiseXOR: new TokenType("operator/bitwiseXOR", "^"),
-    bitwiseLeftShift: new TokenType("operator/bitwiseLeftShift", "<<"),
-    bitwiseRightShift: new TokenType("operator/bitwisRightShift", ">>"),
-    bitwiseRightShiftFill: new TokenType("operator/bitwiseRightShiftFill", ">>>"),
-    logicalOR: new TokenType("operator/logicaOR", "||"),
-    logicalAND: new TokenType("operator/logicalAND", "&&"),
-    logicalNOT: new TokenType("operator/logicalNOT", "!"),
-    comma: new TokenType("operator/comma", ","),
-    spread: new TokenType("operator/spread", "..."),
-    qustionDot: new TokenType("operatpr/qustionDot", "?."),
-    dot: new TokenType("operator/dot", "."),
-    assgin: new TokenType("operator/assignment", "="),
-    plusAssign: new TokenType("operator/plusAssignment", "+="),
-    minusAssign: new TokenType("operator/minusAssignment", "-="),
-    modAssign: new TokenType("operator/modAssignment", "%="),
-    divideAssign: new TokenType("operator/divideAssignment", "/="),
-    multiplyAssign: new TokenType("operator/multiplyAssgin", "*="),
-    exponAssign: new TokenType("operator/exponAssignment", "**="),
-    bitwiseORAssgin: new TokenType("operator/bitwiseORAssginment", "|="),
-    bitwiseANDAssgin: new TokenType("operator/bitwiseANDAssginment", "&="),
-    bitewiseNOTAssgin: new TokenType("operator/bitwiseNOTAssginment", "~="),
-    bitwiseXORAssgin: new TokenType("operator/bitwiseXORAssginment", "^="),
-    logicalORAssign: new TokenType("operator/logicaORAssingment", "||="),
-    logicalANDAssgin: new TokenType("operator/logicalANDAssignment", "&&="),
-    bitwiseLeftShiftAssgin: new TokenType("operator/bitwiseLeftShiftAssginment", "<<="),
-    bitwiseRightShiftAssgin: new TokenType("operator/bitwisRightShiftAssginment", ">>="),
-    bitwiseRightShiftFillAssgin: new TokenType("operator/bitwiseRightShiftFillAssginment", ">>>="),
+    plus: createTokenFactory("operator/plus", "+"),
+    minus: createTokenFactory("operator/mius", "-"),
+    divide: createTokenFactory("operator/divide", "/"),
+    multiply: createTokenFactory("operator/multiply", "*"),
+    mod: createTokenFactory("operator/mod", "%"),
+    incre: createTokenFactory("operator/incre", "++"),
+    decre:createTokenFactory("operator/decre", "--"),
+    expon: createTokenFactory("operator/expon", "**"),
+    gt: createTokenFactory("operator/greaterThen", ">"),
+    lt: createTokenFactory("operator/lessThen", "<"),
+    eq: createTokenFactory("operator/equal", "=="),
+    notEq: createTokenFactory("operator/notEqual", "!="),
+    geqt: createTokenFactory("operator/greaterOrEqualThen", ">="),
+    leqt: createTokenFactory("operator/lessOrEqualThen", "<="),
+    strictEq: createTokenFactory("operator/strictEqual", "==="),
+    strictNotEq: createTokenFactory("operator/strictNotEqual", "!=="),
+    bitwiseOR: createTokenFactory("operator/bitwiseOR", "|"),
+    bitwiseAND: createTokenFactory("operator/bitwiseAND", "&"),
+    bitewiseNOT: createTokenFactory("operator/bitwiseNOT", "~"),
+    bitwiseXOR: createTokenFactory("operator/bitwiseXOR", "^"),
+    bitwiseLeftShift: createTokenFactory("operator/bitwiseLeftShift", "<<"),
+    bitwiseRightShift: createTokenFactory("operator/bitwisRightShift", ">>"),
+    bitwiseRightShiftFill: createTokenFactory("operator/bitwiseRightShiftFill", ">>>"),
+    logicalOR: createTokenFactory("operator/logicaOR", "||"),
+    logicalAND: createTokenFactory("operator/logicalAND", "&&"),
+    logicalNOT: createTokenFactory("operator/logicalNOT", "!"),
+    comma: createTokenFactory("operator/comma", ","),
+    spread: createTokenFactory("operator/spread", "..."),
+    qustion: createTokenFactory("operator/qustion", "?"), // ? :
+    qustionDot: createTokenFactory("operatpr/qustionDot", "?."),
+    dot: createTokenFactory("operator/dot", "."),
+    assgin: createTokenFactory("operator/assignment", "="),
+    plusAssign: createTokenFactory("operator/plusAssignment", "+="),
+    minusAssign: createTokenFactory("operator/minusAssignment", "-="),
+    modAssign: createTokenFactory("operator/modAssignment", "%="),
+    divideAssign: createTokenFactory("operator/divideAssignment", "/="),
+    multiplyAssign: createTokenFactory("operator/multiplyAssgin", "*="),
+    exponAssign: createTokenFactory("operator/exponAssignment", "**="),
+    bitwiseORAssgin: createTokenFactory("operator/bitwiseORAssginment", "|="),
+    bitwiseANDAssgin: createTokenFactory("operator/bitwiseANDAssginment", "&="),
+    bitewiseNOTAssgin: createTokenFactory("operator/bitwiseNOTAssginment", "~="),
+    bitwiseXORAssgin: createTokenFactory("operator/bitwiseXORAssginment", "^="),
+    logicalORAssign: createTokenFactory("operator/logicaORAssingment", "||="),
+    logicalANDAssgin: createTokenFactory("operator/logicalANDAssignment", "&&="),
+    bitwiseLeftShiftAssgin: createTokenFactory("operator/bitwiseLeftShiftAssginment", "<<="),
+    bitwiseRightShiftAssgin: createTokenFactory("operator/bitwisRightShiftAssginment", ">>="),
+    bitwiseRightShiftFillAssgin: createTokenFactory("operator/bitwiseRightShiftFillAssginment", ">>>="),
     // ========== Literal ==========
-    true: new TokenType("literal/true", "true"),
-    false: new TokenType("literal/false", "false"),
-    null: new TokenType("literal/nll", "null"),
-    undefined: new TokenType("literal/undefined", "undefined"),
-    numberLiteral: new TokenType("literal/number", "number-pattern"),
-    stringLiteral: new TokenType("literal/string", "string-pattern"),
+    true: createTokenFactory("literal/true", "true"),
+    false: createTokenFactory("literal/false", "false"),
+    null: createTokenFactory("literal/nll", "null"),
+    undefined: createTokenFactory("literal/undefined", "undefined"),
+    numberLiteral: createTokenFactory("literal/number", "number-pattern"),
+    stringLiteral: createTokenFactory("literal/string", "string-pattern"),
     // ========== Comment ===========
-    singleLineComment: new TokenType("comment/single", "comment-single"),
-    multiLineComment: new TokenType("comment/multi", "comment-multi"),
+    singleLineComment: createTokenFactory("comment/single", "comment-single"),
+    multiLineComment: createTokenFactory("comment/multi", "comment-multi"),
     // ========== ID ===========
-    identifier: new TokenType('identifier', 'identifier')
+    identifier: createTokenFactory('identifier', 'identifier'),
+    // ========== EOF ==========
+    eof: createTokenFactory('eof', 'eof'),
 }
 /** ======================================================
  *          String Array for Match
@@ -181,13 +189,26 @@ export const ReservedWords = {
         "else", "enum", "export", "extends", "finally",
         "for", "function", "if", "import", "new",
         "return", "super", "switch", "this", "throw",
-        "try", "var", "with", "yield",
+        "try", "var", "with", "yield","let",
         // Unary operators
         "delete", "void", "typeof",
         // Relation operators
         "in", "instanceof",
-    ],
+    ]
+};
+
+export const UTF8Def = {
     // TODO: more generice defined for utf-8 support
     whiteSpaceChars: [" ", "\t"],
     newLineChars: ["\n"],
-};
+    numberChars: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+}
+
+export function composeCharsArray(...argument: Array<Array<string>>) {
+    return argument.reduce(
+        (pre: Array<string>, cur: Array<string>) => {
+            return [...pre, ...cur];
+        }, 
+        []
+    );
+}

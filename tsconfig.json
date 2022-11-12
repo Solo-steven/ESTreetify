@@ -1,5 +1,9 @@
 {
     "compilerOptions": {
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "target": "es6",
+        "module": "commonjs",    
         "lib": ["ESNext", "DOM"],
         "baseUrl": ".",
         "paths": {
