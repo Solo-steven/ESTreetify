@@ -1,4 +1,4 @@
-import {TokenFactories} from "../type";
+import {TokenType} from "../tokenType";
 import {tokenizeIntoOmitTokens, createOmitToken} from "./helper";
 
 describe("operator/plus and incre", () => {
@@ -12,19 +12,19 @@ describe("operator/plus and incre", () => {
         )
         .toEqual(
             [
-                createOmitToken(TokenFactories.let.type, "let"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.assgin.type, "="),
-                createOmitToken(TokenFactories.numberLiteral.type, "10"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "20"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "10"),
-                createOmitToken(TokenFactories.semi.type, ";"),   
+                createOmitToken(TokenType.let, "let"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.assgin, "="),
+                createOmitToken(TokenType.digitalLiteral, "10"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "20"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "10"),
+                createOmitToken(TokenType.semi, ";"),   
             ]
         );
     });
@@ -39,31 +39,31 @@ describe("operator/plus and incre", () => {
             `)
         ).toEqual(
             [
-                createOmitToken(TokenFactories.let.type, "let"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.assgin.type, "="),
-                createOmitToken(TokenFactories.numberLiteral.type, "10"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.incre.type, "++"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "1"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.incre.type, "++"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "1"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.incre.type, "++"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "1"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.incre.type, "++"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "1"),
-                createOmitToken(TokenFactories.semi.type, ";"),   
+                createOmitToken(TokenType.let, "let"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.assgin, "="),
+                createOmitToken(TokenType.digitalLiteral, "10"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.incre, "++"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "1"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.incre, "++"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "1"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.incre, "++"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "1"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.incre, "++"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "1"),
+                createOmitToken(TokenType.semi, ";"),   
             ]
         )
     });
@@ -75,16 +75,16 @@ describe("operator/plus and incre", () => {
             `)
         ).toEqual(
             [
-                createOmitToken(TokenFactories.let.type, "let"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.assgin.type, "="),
-                createOmitToken(TokenFactories.numberLiteral.type, "10"),
-                createOmitToken(TokenFactories.semi.type, ";"),
-                createOmitToken(TokenFactories.identifier.type, "a"),
-                createOmitToken(TokenFactories.incre.type, "++"),
-                createOmitToken(TokenFactories.plus.type, "+"),
-                createOmitToken(TokenFactories.numberLiteral.type, "1"),
-                createOmitToken(TokenFactories.semi.type, ";"),
+                createOmitToken(TokenType.let, "let"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.assgin, "="),
+                createOmitToken(TokenType.digitalLiteral, "10"),
+                createOmitToken(TokenType.semi, ";"),
+                createOmitToken(TokenType.identifier, "a"),
+                createOmitToken(TokenType.incre, "++"),
+                createOmitToken(TokenType.plus, "+"),
+                createOmitToken(TokenType.digitalLiteral, "1"),
+                createOmitToken(TokenType.semi, ";"),
             ]
         )
     });

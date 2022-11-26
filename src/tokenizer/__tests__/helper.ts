@@ -1,15 +1,14 @@
-import {Tokenizer} from "../index";
-import {TokenFactories} from "../type";
-import type {Token, TokenFactory} from "../type";
+import {Tokenizer} from "../tokenizer";
+import {Token, TokenType} from "../tokenType";
 
-type OmitToken = Omit<Token<unknown>, "start" | "end" | "location">;
+type OmitToken = Omit<Token<unknown>, "start" | "end" | "location" | "source">;
 
 export function tokenizeIntoOmitTokens(code: string) {
     const tokens: Array<OmitToken> = [];
     const tokenizer = new Tokenizer(code);
     while(1) {
         const token = tokenizer.getToken();
-        if(TokenFactories.eof.is(token)) {
+        if(token.type === TokenType.EOF) {
             break;
         }
         tokens.push({
@@ -20,6 +19,6 @@ export function tokenizeIntoOmitTokens(code: string) {
     return tokens;
 }
 
-export function createOmitToken(typeFun: TokenFactory['type'], value: string): OmitToken {
-    return { type: typeFun(), value };
+export function createOmitToken<T>(type: TokenType, value: T): OmitToken {
+    return { type, value };
 }
