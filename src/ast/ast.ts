@@ -69,12 +69,16 @@ export interface UndefinedLiteral extends Literal {
   *            := ForStatement
   *            := ForInStatement
 */
-interface Statement extends NodeBase{};
-interface BlockStatement extends Statement {
+export interface Statement extends NodeBase{};
+export interface BlockStatement extends Statement {
     type: ASTType.BlockStatement;
     body: [ Statement ];
 }
-type FunctionBody = BlockStatement;
+export type FunctionBody = BlockStatement;
+export interface ExpressionStatement extends Statement {
+    type: ASTType.ExpressionStatement,
+    expression: Expression;
+}
 /***
   *  Declaration := FunctionDeclaration
   *              := VariableDeclaration
@@ -128,7 +132,7 @@ interface VariableDeclarator extends NodeBase {
   * ObjectExpression        := [Property]
   * NewExpression           := 'new' Expression '(' [Expression] ')'
 */
-interface Expression extends NodeBase {};
+export interface Expression extends NodeBase {};
 export interface ThisExpression extends Expression {
     type: ASTType.ThisExpression;
 }

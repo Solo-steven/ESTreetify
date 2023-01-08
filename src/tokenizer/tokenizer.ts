@@ -1,13 +1,18 @@
-import {forkPosition, createLocation} from "@/src/utils/location";
-import type {Context} from "./state";
-import {createContext, forkContext} from "./state";
+import {clonePosition, createLocation} from "@/src/utils/location";
+import type {Context} from "./context";
+import {createContext, cloneContext} from "./context";
 import type {Token, TokenFactory} from "./tokenType";
-import {TokenFactories} from "./tokenType";
+import {TokenType,TokenFactories} from "./tokenType";
 
-import {ReservedWords, UTF8Def} from "./charcodes";
-import {composeCharsArray} from "./charcodes";
+import {ReservedWords, UTF8Def} from "../utils/charcodes";
+import {composeCharsArray} from "../utils/charcodes";
 /**
- * Tokenizer Class is used for tokenize code string intpo tokens
+ * Tokenizer Class is used for tokenize code string intpo tokens.
+ * expose three method as public for compostion or inherit
+ * - get: like string peek
+ * - lookhead: peek next token
+ * - match: like string is
+ * - next: like string eat
  * @property {string} code - code string
  * @property {Context} context - current point and current position
  */
@@ -15,10 +20,12 @@ export class Tokenizer {
     private code: string;
     private context: Context;
     private startTokenContext: Context | null;
+    private tokenStream: Array<Token>;
     constructor(code: string) {
         this.code = code;
         this.context = createContext();
         this.startTokenContext  = null;
+        this.tokenStream = [];
     }
     /**
      * peek function is used for peek string start at current pointer.
@@ -90,7 +97,7 @@ export class Tokenizer {
      * @return {void} - no return value
      */
     protected startToken(): void {
-        this.startTokenContext = forkContext(this.context);
+        this.startTokenContext = cloneContext(this.context);
     }
     /**
      * finishToken function is a HOF what create a token by passing a TokenFactory function
@@ -105,8 +112,8 @@ export class Tokenizer {
         value: T
     ): Token<T> {
         const location = createLocation();
-        location.start = forkPosition(this.startTokenContext.position);
-        location.end = forkPosition(this.context.position);
+        location.start = clonePosition(this.startTokenContext.position);
+        location.end = clonePosition(this.context.position);
         const start = this.startTokenContext.pointer;
         const end = this.context.pointer;
         return callback(value, start, end, location, this.code.slice(start, end));
@@ -144,18 +151,11 @@ export class Tokenizer {
             continue;
         }
     }
-    public lookahead(n = 1) {
-        const lastContext = forkContext(this.context);
-        const lastStartTokenContext = forkContext(this.startTokenContext);
-        let token: Token<unknown> | null = null;
-        for(let i = 0 ; i < n ; ++i) {
-            token = this.getToken();
-        }
-        this.context = lastContext;
-        this.startTokenContext = lastStartTokenContext;
-        return token;
-    }
-    public getToken() {
+    /**
+     * Main Logic of Tokenizer 
+     * @returns {Token}
+     */
+    private tokenize(): Token {
         this.skipSpace();
         const char = this.peek();
         this.startToken();
@@ -282,6 +282,57 @@ export class Tokenizer {
                 return this.readString();
             }
         }
+    }
+    /**
+     * 
+     * @returns {Token}
+     */
+    public get(): Token {
+        if(this.tokenStream.length === 0) {
+            this.tokenStream.push(this.tokenize());
+        }
+        return this.tokenStream[this.context.indexInTokenStream];
+    }
+    /**
+     * 
+     * @returns 
+     */
+    public match(tokenType: TokenType | Set<TokenType>): boolean {
+        if(typeof(tokenType) === "number")
+            return (this.get().type === tokenType)
+        return tokenType.has(this.get().type);
+    }
+    /**
+     * 
+     * @returns 
+     */
+    public next() {
+        const lastToken = this.get();
+        const nextToken = this.tokenize();
+        if(nextToken.type === TokenType.EOF && lastToken.type === TokenType.EOF) {
+            return lastToken;
+        }
+        this.tokenStream.push(nextToken);
+        this.context.indexInTokenStream ++;
+        return lastToken;
+    }
+    /**
+     * 
+     */
+    public lookhead(): Token {
+        const lookheadIndex = this.context.indexInTokenStream + 1;
+        const maxIndex = this.tokenStream.length - 1;
+        if(lookheadIndex < maxIndex) {
+            return this.tokenStream[this.context.indexInTokenStream+1];
+        }
+        // if next token and last token is EOF.
+        const lastToken = this.get();
+        const nextToken = this.tokenize();
+        if(nextToken.type === TokenType.EOF && lastToken.type === TokenType.EOF) {
+            return lastToken;
+        }
+        this.tokenStream.push(nextToken);
+        return this.tokenStream[this.context.indexInTokenStream+1];
     }
     /** ======================================
      *      Operators State Machine

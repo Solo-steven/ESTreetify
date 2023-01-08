@@ -118,7 +118,7 @@ export enum TokenType {
  *  with original position is source code
  *  and type of this token.
  */
-export interface Token<T> {
+export interface Token<T = string> {
     type: TokenType;
     value: T,
     start: number,
@@ -126,7 +126,7 @@ export interface Token<T> {
     location: SourceLocation;
     source: string;
 }
-export interface TokenFactory<T> {
+export interface TokenFactory<T = string> {
     (value: T, start: number, end: number, location: SourceLocation, source: string): Token<T>;
 }
 function createTokenFactory<T = string>(type: TokenType): TokenFactory<T> {
@@ -257,15 +257,34 @@ export type UnaryOperator =
 export type UpdateOperator = TokenType.incre | TokenType.decre;    // '++', '--'
 
 export type BinaryOperator = 
-    TokenType.plus | TokenType.minus | TokenType.multiply | TokenType.divide | TokenType.mod  // '+', '-', '*', '/', '%'
-    TokenType.bitwiseAND | TokenType.bitwiseOR | TokenType.bitwiseXOR |                       // '&', '|', '^'
-    TokenType.in | TokenType.instanceof |                                                     // 'in', 'instanceof'
-    TokenType.eq | TokenType.notEq | TokenType.strictEq | TokenType.strictNotEq               // '==', '!=', '===', '!=='
-    TokenType.geqt | TokenType.leqt |  TokenType.gt | TokenType.lt                            // '>=', '<=', '>', '<'
-    TokenType.bitwiseLeftShift | TokenType.bitwiseRightShift |TokenType.bitwiseRightShiftFill // '>>', '<<', '>>>'
+    TokenType.plus | TokenType.minus | TokenType.multiply | TokenType.divide | TokenType.mod | // '+', '-', '*', '/', '%'
+    TokenType.bitwiseAND | TokenType.bitwiseOR | TokenType.bitwiseXOR |                        // '&', '|', '^'
+    TokenType.in | TokenType.instanceof |                                                      // 'in', 'instanceof'
+    TokenType.eq | TokenType.notEq | TokenType.strictEq | TokenType.strictNotEq |              // '==', '!=', '===', '!=='
+    TokenType.geqt | TokenType.leqt |  TokenType.gt | TokenType.lt |                           // '>=', '<=', '>', '<'
+    TokenType.bitwiseLeftShift | TokenType.bitwiseRightShift |TokenType.bitwiseRightShiftFill  // '>>', '<<', '>>>'
     ;
 export type AssignmentOperator = 
     TokenType.assgin 
 
 export type VariableDeclarationKindKeywords = TokenType.var | TokenType.const | TokenType.let; // 'let', 'var', 'const'
 
+
+export const BinartOperatorSet = new Set([
+    TokenType.plus , TokenType.minus , TokenType.multiply , TokenType.divide , TokenType.mod , // '+', '-', '*', '/', '%'
+    TokenType.bitwiseAND , TokenType.bitwiseOR , TokenType.bitwiseXOR ,                        // '&', '|', '^'
+    TokenType.in , TokenType.instanceof ,                                                      // 'in', 'instanceof'
+    TokenType.eq , TokenType.notEq , TokenType.strictEq , TokenType.strictNotEq ,              // '==', '!=', '===', '!=='
+    TokenType.geqt , TokenType.leqt ,  TokenType.gt , TokenType.lt ,                           // '>=', '<=', '>', '<'
+    TokenType.bitwiseLeftShift , TokenType.bitwiseRightShift ,TokenType.bitwiseRightShiftFill  // '>>', '<<', '>>>'
+]);
+
+export const UnaryOperatorSet = new Set([
+    TokenType.plus , TokenType.minus ,                      // '+', '-'
+    TokenType.logicalNOT , TokenType.bitwiseNOT ,           // '!', '~'
+    TokenType.typeof , TokenType.void , TokenType.delete    // 'typeof', 'void', 'delete'
+]);
+
+export const UpdateOperatorSet = new Set([
+    TokenType.incre, TokenType.decre                        // '++', '--'
+]);

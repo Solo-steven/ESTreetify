@@ -5,18 +5,12 @@ describe("operator/plus and incre", () => {
     test("plus(+) concat with identifier", () => {
         expect(
             tokenizeIntoOmitTokens(`
-                let a = 10;
                 a + 20;
                 a+10;
             `)
         )
         .toEqual(
             [
-                createOmitToken(TokenType.let, "let"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.assgin, "="),
-                createOmitToken(TokenType.digitalLiteral, "10"),
-                createOmitToken(TokenType.semi, ";"),
                 createOmitToken(TokenType.identifier, "a"),
                 createOmitToken(TokenType.plus, "+"),
                 createOmitToken(TokenType.digitalLiteral, "20"),
@@ -28,10 +22,23 @@ describe("operator/plus and incre", () => {
             ]
         );
     });
+    const increAThenAdd1Prefix = [
+        createOmitToken(TokenType.incre, "++"),
+        createOmitToken(TokenType.identifier, "a"),
+        createOmitToken(TokenType.plus, "+"),
+        createOmitToken(TokenType.digitalLiteral, "1"),
+        createOmitToken(TokenType.semi, ";"),
+    ];
+    const increAThenAdd1Postfix = [
+        createOmitToken(TokenType.identifier, "a"),
+        createOmitToken(TokenType.incre, "++"),
+        createOmitToken(TokenType.plus, "+"),
+        createOmitToken(TokenType.digitalLiteral, "1"),
+        createOmitToken(TokenType.semi, ";"),
+    ]
     test("incre(++) operator in postfix or prefix", () => {
         expect(
             tokenizeIntoOmitTokens(`
-               let a = 10;
                ++a + 1;
                ++ a + 1;
                a++ + 1;
@@ -39,52 +46,32 @@ describe("operator/plus and incre", () => {
             `)
         ).toEqual(
             [
-                createOmitToken(TokenType.let, "let"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.assgin, "="),
-                createOmitToken(TokenType.digitalLiteral, "10"),
-                createOmitToken(TokenType.semi, ";"),
-                createOmitToken(TokenType.incre, "++"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.plus, "+"),
-                createOmitToken(TokenType.digitalLiteral, "1"),
-                createOmitToken(TokenType.semi, ";"),
-                createOmitToken(TokenType.incre, "++"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.plus, "+"),
-                createOmitToken(TokenType.digitalLiteral, "1"),
-                createOmitToken(TokenType.semi, ";"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.incre, "++"),
-                createOmitToken(TokenType.plus, "+"),
-                createOmitToken(TokenType.digitalLiteral, "1"),
-                createOmitToken(TokenType.semi, ";"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.incre, "++"),
-                createOmitToken(TokenType.plus, "+"),
-                createOmitToken(TokenType.digitalLiteral, "1"),
-                createOmitToken(TokenType.semi, ";"),   
+                ...increAThenAdd1Prefix,
+                ...increAThenAdd1Prefix,
+                ...increAThenAdd1Postfix,
+                ...increAThenAdd1Postfix,
             ]
         )
     });
-    test("incre(++) operator concat plus(+)", () => {
+    test("incre(++) post-operator concat plus(+)", () => {
         expect(
             tokenizeIntoOmitTokens(`
-               let a = 10;
                a+++1;
             `)
         ).toEqual(
             [
-                createOmitToken(TokenType.let, "let"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.assgin, "="),
-                createOmitToken(TokenType.digitalLiteral, "10"),
-                createOmitToken(TokenType.semi, ";"),
-                createOmitToken(TokenType.identifier, "a"),
-                createOmitToken(TokenType.incre, "++"),
-                createOmitToken(TokenType.plus, "+"),
-                createOmitToken(TokenType.digitalLiteral, "1"),
-                createOmitToken(TokenType.semi, ";"),
+                ...increAThenAdd1Postfix,
+            ]
+        )
+    });
+    test("incre(++) prefix-operator concat plus(+)", () => {
+        expect(
+            tokenizeIntoOmitTokens(`
+               ++a+1;
+            `)
+        ).toEqual(
+            [
+                ...increAThenAdd1Prefix,
             ]
         )
     });

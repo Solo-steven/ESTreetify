@@ -9,7 +9,7 @@ export interface Position {
 export function createPosition(): Position {
     return { row: 0, col: 0};
 }
-export function forkPosition(target: Position): Position {
+export function clonePosition(target: Position): Position {
     return {...target};
 }
 export interface SourceLocation  {
@@ -19,6 +19,6 @@ export interface SourceLocation  {
 export function createLocation() {
     return { start: createPosition(), end: createPosition() }
 }
-export function forkLocation(location: SourceLocation) {
-    return { start: forkPosition(location.start), end: forkPosition(location.end)};
+export function cloneLocation(location: SourceLocation) {
+    return { start: clonePosition(location.start), end: clonePosition(location.end)};
 }
